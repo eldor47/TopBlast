@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1740430614|12220928720';
+const CACHE_VERSION = '1740590998|1137727735';
 /** @type {string} */
 const CACHE_PREFIX = 'AvaxHeroes2-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
