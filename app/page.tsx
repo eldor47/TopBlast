@@ -18,7 +18,7 @@ export default function GamePage() {
   const shareOnTwitter = () => {
     const url = encodeURIComponent("https://topblast.eldor.app");
     const text = encodeURIComponent(
-      "Just finished playing this platformer called Top Blast! 🚀 Sharing for a chance to get my Avax NFT featured in Top Blast by @TimDraws! $AVAX"
+      "Just finished playing this platformer called Top Blast!\r\rSharing for a chance to get my $Avax NFT featured in the Skin Shop. Art by @TimDraws"
     );
     const twitterUrl = `https://x.com/intent/tweet?text=${text}&url=${url}`;
     window.open(twitterUrl, "_blank");
