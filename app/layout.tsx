@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Head from "next/head";
 
 export const metadata: Metadata = {
   title: "Top Blast",
@@ -24,7 +14,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <Head>
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Play TopBlast 🚀" />
+        <meta
+          name="twitter:description"
+          content="Climb the charts as your favorite $AVAX characters"
+        />
+        <meta
+          name="twitter:image"
+          content="https://topblast.eldor.app/assets/share.png"
+        />
+        <meta name="twitter:site" content="@eldor4747" />
+      </Head>
+      <body>
         {children}
       </body>
     </html>

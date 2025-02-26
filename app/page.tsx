@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 export default function GamePage() {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect screen size on mount & resize
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -15,6 +14,15 @@ export default function GamePage() {
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
+
+  const shareOnTwitter = () => {
+    const url = encodeURIComponent("https://topblast.eldor.app");
+    const text = encodeURIComponent(
+      "Just finished playing this platformer called Top Blast! 🚀 Sharing for a chance to get my Avax NFT featured in Top Blast by @TimDraws! $AVAX"
+    );
+    const twitterUrl = `https://x.com/intent/tweet?text=${text}&url=${url}`;
+    window.open(twitterUrl, "_blank");
+  };
 
   return (
     <div
@@ -28,54 +36,51 @@ export default function GamePage() {
         flexDirection: "row",
       }}
     >
-      {/* Only show side panels on desktop */}
+      {/* Left Panel (Leaderboard) */}
       {!isMobile && (
-        <>
-          {/* Left Panel (Leaderboard) */}
-          <div
+        <div
+          style={{
+            width: "25%",
+            height: "100vh",
+            background: "linear-gradient(135deg, #1e1e1e, #292929)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            color: "#fff",
+            padding: "20px",
+            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)", // Soft glow effect in new teal color
+          }}
+        >
+          <h2
             style={{
-              width: "25%",
-              height: "100vh", // Full screen height
-              backgroundColor: "#222",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              color: "#fff",
-              padding: "20px",
-              borderRight: "2px solid #ff9800", // Adds a nice separator effect
+              fontSize: "1.5rem",
+              marginBottom: "10px",
+              borderBottom: "2px solid #19937f",
+              paddingBottom: "5px",
             }}
           >
-            <h2
-              style={{
-                fontSize: "1.5rem",
-                marginBottom: "10px",
-                borderBottom: "2px solid #ff9800",
-                paddingBottom: "5px",
-              }}
-            >
-              Leaderboard
-            </h2>
-            <div
-              style={{
-                width: "90%",
-                padding: "15px",
-                textAlign: "center",
-                fontSize: "1rem",
-                fontWeight: "bold",
-                color: "#ff9800",
-                backgroundColor: "#333",
-                borderRadius: "5px",
-                marginBottom: "15px",
-                boxShadow: "inset 0px 0px 5px rgba(255, 152, 0, 0.5)",
-              }}
-            >
-              🏆 Coming Soon! 🏆
-            </div>
+            Leaderboard
+          </h2>
+          <div
+            style={{
+              width: "90%",
+              padding: "15px",
+              textAlign: "center",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              color: "#19937f",
+              backgroundColor: "#333",
+              borderRadius: "8px",
+              marginBottom: "15px",
+              boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.5)",
+            }}
+          >
+            🏆 Coming Soon! 🏆
           </div>
-        </>
+        </div>
       )}
 
-      {/* Game in the center (always visible) */}
+      {/* Game in the center */}
       <div
         style={{
           flex: 1,
@@ -111,71 +116,102 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Only show side panels on desktop */}
+      {/* Right Panel (Wallet/Info) */}
       {!isMobile && (
-        <>
-          {/* Right Panel (Wallet/Info) */}
+        <div
+          style={{
+            width: "25%",
+            height: "100vh",
+            background: "linear-gradient(135deg, #1e1e1e, #292929)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            color: "#fff",
+            padding: "20px",
+            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)", // Soft glow effect in new teal color
+          }}
+        >
+          <img
+            src="/assets/logo.png"
+            alt="Game Logo"
+            style={{
+              width: "80%",
+              maxWidth: "150px",
+              marginBottom: "15px",
+              borderRadius: "10px",
+            }}
+          />
+
+          {/* "How to Play" Section */}
           <div
             style={{
-              width: "25%",
-              height: "100vh", // Full screen height
-              backgroundColor: "#222",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              color: "#fff",
-              padding: "20px",
-              borderLeft: "2px solid #ff9800", // Adds a nice separator effect
+              width: "90%",
+              padding: "15px",
+              textAlign: "center",
+              fontSize: "1.2rem",
+              backgroundColor: "#333",
+              borderRadius: "8px",
+              marginTop: "10px",
+              lineHeight: "1.5",
+              boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.3)",
             }}
           >
-            <img
-              src="/assets/logo.png"
-              alt="Game Logo"
+            <h3
               style={{
-                width: "80%",
-                maxWidth: "150px",
-                marginBottom: "15px",
-                borderRadius: "10px",
-              }}
-            />
-
-            {/* "How to Play" Section */}
-            <div
-              style={{
-                width: "90%",
-                padding: "15px",
-                textAlign: "center",
-                fontSize: "0.9rem",
-                backgroundColor: "#333",
-                borderRadius: "5px",
-                marginTop: "10px",
-                lineHeight: "1.5",
-                boxShadow: "inset 0px 0px 5px rgba(255, 152, 0, 0.3)",
+                fontSize: "1.2rem",
+                color: "#19937f",
+                marginBottom: "5px",
               }}
             >
-              <h3
-                style={{
-                  fontSize: "1.2rem",
-                  color: "#ff9800",
-                  marginBottom: "5px",
-                }}
-              >
-                How to Play
-              </h3>
-              <p>
-                Use <b>Arrow Keys</b> or <b>A/D</b> to move, or let the{" "}
-                <b>mouse guide you</b>.
-              </p>
-              <p>
-                Climb as high as you can! If you fall below the screen, the
-                market crashes!
-              </p>
-              <p>
-                Purchase skins with <b>AVA Token</b> from the homepage.
-              </p>
-            </div>
+              How to Play
+            </h3>
+            <p>
+              Use <b>Arrow Keys</b> or <b>A/D</b> to move, or let the{" "}
+              <b>mouse guide you</b>.
+            </p>
+            <p>
+              Climb as high as you can! If you fall below the screen, the market
+              crashes!
+            </p>
+            <p>
+              Purchase skins with <b>AVA Token</b> from the homepage.
+            </p>
           </div>
-        </>
+
+          {/* Share on Twitter Button */}
+          <button
+            onClick={shareOnTwitter}
+            style={{
+              marginTop: "20px",
+              padding: "12px 18px",
+              fontSize: "1rem",
+              color: "#fff",
+              backgroundColor: "#000000",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              transition: "0.3s",
+              boxShadow: "0px 0px 10px rgba(29, 161, 242, 0.5)", // Twitter glow effect
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            🚀 Share on X
+          </button>
+
+          {/* Info about the drawing incentive */}
+          <p
+            style={{
+              marginTop: "10px",
+              fontSize: "1.25rem",
+              textAlign: "center",
+              color: "#19937f"
+            }}
+          >
+            Share for a chance to get your <b>Avax NFT </b> featured in Top Blast! Drawn by <b>@TimDraws</b>!
+          </p>
+        </div>
       )}
     </div>
   );
