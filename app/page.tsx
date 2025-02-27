@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function GamePage() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -33,10 +34,11 @@ export default function GamePage() {
         color: "#fff",
         justifyContent: "center",
         alignItems: "center",
-        flexDirection: "row",
+        flexDirection: isMobile ? "column" : "row",
+        position: "relative",
       }}
     >
-      {/* Left Panel (Leaderboard) */}
+      {/* Left Panel (Leaderboard) - Only on Desktop */}
       {!isMobile && (
         <div
           style={{
@@ -48,7 +50,7 @@ export default function GamePage() {
             alignItems: "center",
             color: "#fff",
             padding: "20px",
-            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)", // Soft glow effect in new teal color
+            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)",
           }}
         >
           <h2
@@ -89,6 +91,7 @@ export default function GamePage() {
           alignItems: "center",
           width: "100vw",
           height: "100vh",
+          position: "relative", // Needed for absolute positioning of the button
         }}
       >
         <div
@@ -111,12 +114,37 @@ export default function GamePage() {
               height: "100%",
               border: "none",
               background: "#000",
+              zIndex: 1, // Ensures the game is in the background
             }}
           ></iframe>
         </div>
+
+        {/* Toggle Button for Mobile (Now Above the Game) */}
+        {isMobile && (
+          <button
+            onClick={() => setIsPanelOpen(true)}
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              padding: "10px 15px",
+              fontSize: "1rem",
+              backgroundColor: "#19937f",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              boxShadow: "0px 0px 10px rgba(25, 147, 127, 0.5)",
+              zIndex: 10, // Ensures button is visible over the iframe
+            }}
+          >
+            ℹ️ Info
+          </button>
+        )}
       </div>
 
-      {/* Right Panel (Wallet/Info) */}
+      {/* Right Panel (Desktop Only) */}
       {!isMobile && (
         <div
           style={{
@@ -128,7 +156,7 @@ export default function GamePage() {
             alignItems: "center",
             color: "#fff",
             padding: "20px",
-            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)", // Soft glow effect in new teal color
+            boxShadow: "0 0 10px rgba(25, 147, 127, 0.3)",
           }}
         >
           <img
@@ -156,13 +184,7 @@ export default function GamePage() {
               boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.3)",
             }}
           >
-            <h3
-              style={{
-                fontSize: "1.2rem",
-                color: "#19937f",
-                marginBottom: "5px",
-              }}
-            >
+            <h3 style={{ fontSize: "1.2rem", color: "#19937f" }}>
               How to Play
             </h3>
             <p>
@@ -178,7 +200,7 @@ export default function GamePage() {
             </p>
           </div>
 
-          {/* Share on Twitter Button */}
+          {/* Share on X Button */}
           <button
             onClick={shareOnTwitter}
             style={{
@@ -192,14 +214,11 @@ export default function GamePage() {
               cursor: "pointer",
               fontWeight: "bold",
               transition: "0.3s",
-              boxShadow: "0px 0px 10px rgba(29, 161, 242, 0.5)", // Twitter glow effect
+              boxShadow: "0px 0px 10px rgba(29, 161, 242, 0.5)",
             }}
-            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.8")}
-            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
           >
             🚀 Share on X
           </button>
-
           {/* Info about the drawing incentive */}
           <p
             style={{
@@ -213,6 +232,116 @@ export default function GamePage() {
           </p>
         </div>
       )}
+
+      {/* Slide-Out Panel for Mobile */}
+      {isMobile && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            width: "80%",
+            height: "100vh",
+            background: "#1e1e1e",
+            color: "#fff",
+            padding: "20px",
+            boxShadow: isPanelOpen ? "-5px 0 10px rgba(25, 147, 127, 0.3)" : "none",
+            zIndex: 20,
+            transform: isPanelOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 0.3s ease-in-out",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "start", // Centers everything vertically
+            alignItems: "center", // Centers everything horizontally
+            textAlign: "center", // Ensures text is centered
+            gap: "1em"
+          }}
+        >
+          {/* Close Button */}
+          <button 
+            onClick={() => setIsPanelOpen(false)}
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              padding: "8px 12px",
+              fontSize: "1rem",
+              backgroundColor: "#19937f",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              zIndex: 30,
+            }}
+          >
+            ❌ Close
+          </button>
+
+          {/* Info Box */}
+          <div
+            style={{
+              width: "90%",
+              padding: "15px",
+              textAlign: "center",
+              fontSize: "1rem",
+              backgroundColor: "#333",
+              borderRadius: "8px",
+              marginTop: "10px",
+              lineHeight: "1.5",
+              boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.3)",
+            }}
+          >
+            <h3 style={{ fontSize: "1.2rem", color: "#19937f" }}>
+              How to Play
+            </h3>
+            <p>
+              Touch follow to guide the player across the charts.
+            </p>
+            <p>
+              Climb as high as you can! If you fall below the screen, the market
+              crashes!
+            </p>
+            <p>
+              Purchase skins with <b>AVA Token</b> from the homepage.
+            </p>
+          </div>
+
+          {/* Share on X Button */}
+          <button
+            onClick={shareOnTwitter}
+            style={{
+              marginTop: "20px",
+              padding: "12px 18px",
+              fontSize: "1rem",
+              color: "#fff",
+              backgroundColor: "#000000",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              transition: "0.3s",
+              boxShadow: "0px 0px 10px rgba(29, 161, 242, 0.5)",
+            }}
+          >
+            🚀 Share on X
+          </button>
+
+          {/* Info about the drawing incentive */}
+          <p
+            style={{
+              marginTop: "10px",
+              fontSize: "1.25rem",
+              textAlign: "center",
+              color: "#19937f",
+              maxWidth: "90%",
+            }}
+          >
+            Share for a chance to get your <b>Avax NFT </b> featured in Top Blast! Drawn by <b>@TimDraws</b>!
+          </p>
+        </div>
+      )}
+
     </div>
   );
 }
