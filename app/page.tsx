@@ -220,7 +220,7 @@ export default function GamePage() {
             🚀 Share on X
           </button> */}
           {/* Info about the drawing incentive */}
-          <p
+          {/* <p
             style={{
               marginTop: "10px",
               fontSize: "1.25rem",
@@ -229,7 +229,7 @@ export default function GamePage() {
             }}
           >
             Share for a chance to get your <b>Avax NFT </b> featured in Top Blast! Drawn by <b>@TimDraws</b>!
-          </p>
+          </p> */}
         </div>
       )}
 
