@@ -201,7 +201,7 @@ export default function GamePage() {
           </div>
 
           {/* Share on X Button */}
-          <button
+          {/* <button
             onClick={shareOnTwitter}
             style={{
               marginTop: "20px",
@@ -218,7 +218,7 @@ export default function GamePage() {
             }}
           >
             🚀 Share on X
-          </button>
+          </button> */}
           {/* Info about the drawing incentive */}
           <p
             style={{
