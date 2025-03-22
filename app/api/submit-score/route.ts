@@ -9,7 +9,27 @@ createLeaderboardTable().catch(console.error)
 
 export async function POST(request: Request) {
   try {
-    const { address, characterName, score, signature, message } = await request.json()
+    const body = await request.json()
+    console.log('Received score submission:', body)
+
+    // Validate required fields
+    const { address, characterName, score, signature, message } = body
+    if (!address || !score || !signature || !message) {
+      console.error('Missing required fields:', { address, score, signature, message })
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate score is a number
+    if (typeof score !== 'number' || isNaN(score)) {
+      console.error('Invalid score:', score)
+      return NextResponse.json(
+        { error: 'Invalid score format' },
+        { status: 400 }
+      )
+    }
 
     // Skip signature verification in development
     const isValid = process.env.NODE_ENV === 'development' || await verifyMessage({
@@ -19,6 +39,7 @@ export async function POST(request: Request) {
     })
 
     if (!isValid) {
+      console.error('Invalid signature for address:', address)
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
@@ -27,6 +48,7 @@ export async function POST(request: Request) {
 
     // Validate character name
     if (!characterName || typeof characterName !== 'string' || characterName.length > 50) {
+      console.error('Invalid character name:', characterName)
       return NextResponse.json(
         { error: 'Invalid character name' },
         { status: 400 }
@@ -35,12 +57,16 @@ export async function POST(request: Request) {
 
     // Add score to database
     await insertScore(address, characterName, score)
+    console.log('Score inserted successfully for address:', address)
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting score:', error)
+    // Log more details about the error
+    if (error.message) console.error('Error message:', error.message)
+    if (error.stack) console.error('Error stack:', error.stack)
     return NextResponse.json(
-      { error: 'Failed to submit score' },
+      { error: error.message || 'Failed to submit score' },
       { status: 500 }
     )
   }
