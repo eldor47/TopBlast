@@ -177,6 +177,46 @@ function GameContent() {
           position: "relative",
         }}
       >
+        {/* Button Container - Moved outside game container */}
+        <div
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            zIndex: 20,
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
+          {/* Wallet Connection Button - Only show on desktop or if MetaMask is available */}
+          {(!isMobile || isMetaMask) && (
+            <div style={{ order: isMobile ? -1 : 0 }}>
+              <WalletButton />
+            </div>
+          )}
+
+          {/* Toggle Button for Mobile */}
+          {isMobile && (
+            <button
+              onClick={() => setIsPanelOpen(true)}
+              style={{
+                padding: "10px 15px",
+                fontSize: "1rem",
+                backgroundColor: "#19937f",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                boxShadow: "0px 0px 10px rgba(25, 147, 127, 0.5)",
+              }}
+            >
+              ℹ️ Info
+            </button>
+          )}
+        </div>
+
         <div
           style={{
             position: "relative",
@@ -201,44 +241,6 @@ function GameContent() {
             }}
           ></iframe>
         </div>
-
-        {/* Wallet Connection Button - Only show on desktop or if MetaMask is available */}
-        {(!isMobile || isMetaMask) && (
-          <div
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: isMobile ? "10px" : "10px",
-              zIndex: 10,
-            }}
-          >
-            <WalletButton />
-          </div>
-        )}
-
-        {/* Toggle Button for Mobile */}
-        {isMobile && (
-          <button
-            onClick={() => setIsPanelOpen(true)}
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: isMetaMask ? "50px" : "10px", // Adjust position based on wallet button
-              padding: "10px 15px",
-              fontSize: "1rem",
-              backgroundColor: "#19937f",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              boxShadow: "0px 0px 10px rgba(25, 147, 127, 0.5)",
-              zIndex: 10,
-            }}
-          >
-            ℹ️ Info
-          </button>
-        )}
       </div>
 
       {/* Right Panel (Desktop Only) */}
