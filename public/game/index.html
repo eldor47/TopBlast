@@ -79,7 +79,42 @@ body {
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 <link rel="manifest" href="index.manifest.json">
+<script src="score-bridge.js"></script>
+<script>
+  // Function to check if submitGameScore is available
+  function checkSubmitGameScore() {
+    if (typeof window.submitGameScore === 'function') {
+      console.log('Score submission function is available');
+      return true;
+    }
+    console.log('Waiting for score submission function...');
+    return false;
+  }
 
+  // Wait for the function to be available
+  function waitForSubmitGameScore(callback, maxAttempts = 10) {
+    let attempts = 0;
+    const interval = setInterval(() => {
+      if (checkSubmitGameScore()) {
+        clearInterval(interval);
+        callback();
+        return;
+      }
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        console.error('Score submission function not found after', maxAttempts, 'attempts');
+      }
+    }, 500);
+  }
+
+  // Start checking when the page loads
+  window.addEventListener('load', function() {
+    waitForSubmitGameScore(function() {
+      console.log('Game can now submit scores');
+    });
+  });
+</script>
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -98,7 +133,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":8974592,"index.wasm":42695059},"focusCanvas":true,"gdextensionLibs":[],"serviceWorker":"index.service.worker.js"};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":8975008,"index.wasm":42695059},"focusCanvas":true,"gdextensionLibs":[],"serviceWorker":"index.service.worker.js"};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 

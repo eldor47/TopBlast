@@ -1,19 +1,117 @@
 "use client";
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from "react";
+import { Web3Provider } from "./web3Config";
+import { useLeaderboard } from "./hooks/useLeaderboard";
+import { useWallet } from "./hooks/useWallet";
+import Leaderboard from "./components/Leaderboard";
 
-export default function GamePage() {
+// Dynamically import the wallet component with SSR disabled
+const WalletButton = dynamic(
+  () => import('./components/WalletButton'),
+  { ssr: false }
+);
+
+// Declare the type for the window object
+declare global {
+  interface Window {
+    submitGameScore: (score: number, characterName?: string) => Promise<void>;
+    isConnected: boolean;
+    connectWallet: () => Promise<void>;
+    submitScore: (score: number, characterName?: string) => Promise<boolean>;
+    ethereum?: Record<string, unknown>;
+  }
+}
+
+function GameContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const { submitScore, refreshLeaderboard } = useLeaderboard();
+  const { isConnected, connectWallet } = useWallet();
+  const [isMetaMask, setIsMetaMask] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
+    // Check if MetaMask is available
+    const checkMetaMask = () => {
+      const hasMetaMask = typeof window.ethereum !== 'undefined' && 
+        (window.ethereum as any)?.isMetaMask === true;
+      setIsMetaMask(hasMetaMask);
+    };
+
     checkScreenSize();
+    checkMetaMask();
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Initialize global functions
+  useEffect(() => {
+    // Define the submitGameScore function
+    const submitGameScoreFn = async (score: number, characterName: string = "Player") => {
+      try {
+        // Check if wallet is connected
+        if (!isConnected) {
+          alert("Please connect your wallet to submit your score!");
+          await connectWallet();
+          return;
+        }
+        
+        const success = await submitScore(score, characterName);
+        if (success) {
+          console.log('Score submitted successfully');
+          // Refresh the leaderboard
+          await refreshLeaderboard();
+          // Send success message back to iframe
+          window.frames[0].postMessage({ type: 'SCORE_SUBMITTED' }, '*');
+        } else {
+          console.error('Failed to submit score');
+          // Send error message back to iframe
+          window.frames[0].postMessage({ type: 'SCORE_ERROR', error: 'Failed to submit score' }, '*');
+        }
+      } catch (error: any) {
+        console.error('Error submitting score:', error);
+        alert("Failed to submit score. Please make sure your wallet is connected and try again.");
+        // Send error message back to iframe
+        window.frames[0].postMessage({ type: 'SCORE_ERROR', error: error?.message || 'Unknown error' }, '*');
+      }
+    };
+
+    // Expose functions to the global window object
+    window.submitGameScore = submitGameScoreFn;
+    window.isConnected = isConnected;
+    window.connectWallet = connectWallet;
+    window.submitScore = submitScore;
+
+    // Log the current state for debugging
+    console.log('Wallet state:', { isConnected, hasSubmitScore: !!window.submitScore });
+
+    // Cleanup
+    return () => {
+      delete (window as any).submitGameScore;
+      delete (window as any).isConnected;
+      delete (window as any).connectWallet;
+      delete (window as any).submitScore;
+    };
+  }, [submitScore, isConnected, connectWallet, refreshLeaderboard]);
+
+  // Handle iframe communication
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify the message is from our game iframe
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data.type === 'SUBMIT_SCORE') {
+        window.submitGameScore(event.data.score, event.data.characterName);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   const shareOnTwitter = () => {
@@ -63,22 +161,7 @@ export default function GamePage() {
           >
             Leaderboard
           </h2>
-          <div
-            style={{
-              width: "90%",
-              padding: "15px",
-              textAlign: "center",
-              fontSize: "1rem",
-              fontWeight: "bold",
-              color: "#19937f",
-              backgroundColor: "#333",
-              borderRadius: "8px",
-              marginBottom: "15px",
-              boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.5)",
-            }}
-          >
-            🏆 Coming Soon! 🏆
-          </div>
+          <Leaderboard />
         </div>
       )}
 
@@ -91,7 +174,7 @@ export default function GamePage() {
           alignItems: "center",
           width: "100vw",
           height: "100vh",
-          position: "relative", // Needed for absolute positioning of the button
+          position: "relative",
         }}
       >
         <div
@@ -114,19 +197,33 @@ export default function GamePage() {
               height: "100%",
               border: "none",
               background: "#000",
-              zIndex: 1, // Ensures the game is in the background
+              zIndex: 1,
             }}
           ></iframe>
         </div>
 
-        {/* Toggle Button for Mobile (Now Above the Game) */}
+        {/* Wallet Connection Button - Only show on desktop or if MetaMask is available */}
+        {(!isMobile || isMetaMask) && (
+          <div
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: isMobile ? "10px" : "10px",
+              zIndex: 10,
+            }}
+          >
+            <WalletButton />
+          </div>
+        )}
+
+        {/* Toggle Button for Mobile */}
         {isMobile && (
           <button
             onClick={() => setIsPanelOpen(true)}
             style={{
               position: "absolute",
               top: "10px",
-              right: "10px",
+              right: isMetaMask ? "50px" : "10px", // Adjust position based on wallet button
               padding: "10px 15px",
               fontSize: "1rem",
               backgroundColor: "#19937f",
@@ -136,7 +233,7 @@ export default function GamePage() {
               cursor: "pointer",
               fontWeight: "bold",
               boxShadow: "0px 0px 10px rgba(25, 147, 127, 0.5)",
-              zIndex: 10, // Ensures button is visible over the iframe
+              zIndex: 10,
             }}
           >
             ℹ️ Info
@@ -251,10 +348,11 @@ export default function GamePage() {
             transition: "transform 0.3s ease-in-out",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "start", // Centers everything vertically
-            alignItems: "center", // Centers everything horizontally
-            textAlign: "center", // Ensures text is centered
-            gap: "1em"
+            justifyContent: "start",
+            alignItems: "center",
+            textAlign: "center",
+            gap: "1em",
+            overflowY: "auto"
           }}
         >
           {/* Close Button */}
@@ -278,6 +376,14 @@ export default function GamePage() {
             ❌ Close
           </button>
 
+          {/* Leaderboard Section */}
+          <div style={{ width: "100%", marginTop: "40px" }}>
+            <h2 style={{ fontSize: "1.5rem", color: "#19937f", marginBottom: "15px" }}>
+              Leaderboard
+            </h2>
+            <Leaderboard />
+          </div>
+
           {/* Info Box */}
           <div
             style={{
@@ -287,7 +393,7 @@ export default function GamePage() {
               fontSize: "1rem",
               backgroundColor: "#333",
               borderRadius: "8px",
-              marginTop: "10px",
+              marginTop: "20px",
               lineHeight: "1.5",
               boxShadow: "inset 0px 0px 8px rgba(25, 147, 127, 0.3)",
             }}
@@ -343,5 +449,13 @@ export default function GamePage() {
       )}
 
     </div>
+  );
+}
+
+export default function GamePage() {
+  return (
+    <Web3Provider>
+      <GameContent />
+    </Web3Provider>
   );
 }

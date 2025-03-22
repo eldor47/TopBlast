@@ -1,37 +1,60 @@
 // API Route for Next.js (pages/api/submit-score.ts)
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { ethers } from 'ethers';
+import { NextResponse } from 'next/server'
+import { verifyMessage } from 'viem'
+import { avalanche } from 'wagmi/chains'
+import { createLeaderboardTable, insertScore, getTopScores } from '@/app/lib/db'
 
-import { NextResponse } from 'next/server';
+// Initialize the database table
+createLeaderboardTable().catch(console.error)
 
-export async function POST(req: Request) {
-    if (req.method !== 'POST') {
-        return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+export async function POST(request: Request) {
+  try {
+    const { address, characterName, score, signature, message } = await request.json()
+
+    // Skip signature verification in development
+    const isValid = process.env.NODE_ENV === 'development' || await verifyMessage({
+      address,
+      message,
+      signature
+    })
+
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 401 }
+      )
     }
 
-    const body = await req.json();
-    const { wallet, score, message, signature } = body;
-    if (!wallet || typeof score !== 'number' || !message || !signature) {
-        return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+    // Validate character name
+    if (!characterName || typeof characterName !== 'string' || characterName.length > 50) {
+      return NextResponse.json(
+        { error: 'Invalid character name' },
+        { status: 400 }
+      )
     }
 
-    try {
-        // Verify wallet signature
-        const recoveredAddress = ethers.verifyMessage(message, signature);
-        if (recoveredAddress.toLowerCase() !== wallet.toLowerCase()) {
-            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-        }
+    // Add score to database
+    await insertScore(address, characterName, score)
 
-        // Send score to AWS Lambda backend
-        const response = await fetch('https://your-api-gateway-url/submit-score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wallet, score }),
-        });
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error submitting score:', error)
+    return NextResponse.json(
+      { error: 'Failed to submit score' },
+      { status: 500 }
+    )
+  }
+}
 
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
-    } catch (err) {
-        return NextResponse.json({ error: 'Signature verification failed' }, { status: 500 });
-    }
+export async function GET() {
+  try {
+    const scores = await getTopScores()
+    return NextResponse.json(scores)
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch leaderboard' },
+      { status: 500 }
+    )
+  }
 }

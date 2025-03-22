@@ -10,12 +10,21 @@
   },
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
+    "@neondatabase/serverless": "^0.10.4",
     "@reown/appkit": "^1.6.8",
     "@reown/appkit-adapter-ethers": "^1.6.8",
+    "@tanstack/react-query": "^4.36.1",
+    "@vercel/postgres": "^0.10.0",
+    "@web3modal/ethereum": "^2.7.1",
+    "@web3modal/react": "^2.7.1",
+    "@web3modal/wagmi": "^3.5.6",
     "ethers": "^6.13.5",
+    "install": "^0.13.0",
     "next": "15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "viem": "^1.21.4",
+    "wagmi": "^1.4.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
