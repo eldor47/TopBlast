@@ -1,37 +1,30 @@
-import { useAccount, useSignMessage } from 'wagmi'
+import { useAccount } from 'wagmi'
 import { useState, useEffect } from 'react'
 
 interface LeaderboardEntry {
   address: string
-  score: number
-  timestamp: number
   characterName: string
+  score: number
+  timestamp: string
 }
 
+interface EthereumWindow extends Window {
+  ethereum?: {
+    request: (args: { method: string; params: any[] }) => Promise<string>;
+  };
+}
+
+declare const window: EthereumWindow;
+
 export function useLeaderboard() {
-  const { address, isConnected } = useAccount()
-  const { signMessage, data: signatureData, isSuccess: isSignatureSuccess } = useSignMessage()
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [pendingScore, setPendingScore] = useState<{ score: number; characterName: string } | null>(null)
-
-  // Fetch leaderboard
-  useEffect(() => {
-    fetchLeaderboard()
-  }, [])
-
-  // Handle signature success
-  useEffect(() => {
-    if (isSignatureSuccess && signatureData && pendingScore) {
-      submitScoreWithSignature(pendingScore.score, pendingScore.characterName, signatureData)
-      setPendingScore(null)
-    }
-  }, [isSignatureSuccess, signatureData])
+  const [isLoading, setIsLoading] = useState(true)
+  const { address, isConnected } = useAccount()
 
   const fetchLeaderboard = async () => {
     try {
-      setIsLoading(true)
       const response = await fetch('/api/submit-score')
+      if (!response.ok) throw new Error('Failed to fetch leaderboard')
       const data = await response.json()
       setLeaderboard(data)
     } catch (error) {
@@ -41,70 +34,54 @@ export function useLeaderboard() {
     }
   }
 
-  const submitScoreWithSignature = async (score: number, characterName: string, signature: string) => {
+  useEffect(() => {
+    fetchLeaderboard()
+  }, [])
+
+  const submitScore = async (score: number, characterName: string = "Player") => {
     try {
+      // Check if wallet is connected
+      if (!isConnected || !address) {
+        console.log('Wallet not connected')
+        return false
+      }
+
+      // Create message to sign
+      const message = `Submit score ${score} for Top Blast leaderboard`
+      console.log('Requesting signature for message:', message)
+
+      // Request signature
+      const signature = await window.ethereum?.request({
+        method: 'personal_sign',
+        params: [message, address],
+      })
+      console.log('Received signature:', signature)
+
       // Submit score with signature
       const response = await fetch('/api/submit-score', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           address,
+          characterName,
           score,
-          message: `Submit score ${score} for Top Blast leaderboard`,
           signature,
-          characterName
-        })
+          message,
+        }),
       })
 
-      const data = await response.json()
-      
       if (!response.ok) {
-        console.error('Score submission failed:', data.error || 'Unknown error')
-        throw new Error(data.error || 'Failed to submit score')
+        throw new Error('Failed to submit score')
       }
 
-      console.log('Score submitted successfully:', data)
-      
-      // Refresh leaderboard immediately after successful submission
+      // Refresh leaderboard after successful submission
       await fetchLeaderboard()
-      // Dispatch event to notify components
-      window.dispatchEvent(new Event('scoreSubmitted'))
       return true
     } catch (error: any) {
       console.error('Error submitting score:', error)
-      // Log more details about the error
-      if (error.message) console.error('Error message:', error.message)
-      if (error.stack) console.error('Error stack:', error.stack)
       return false
-    }
-  }
-
-  const submitScore = async (score: number, characterName: string = "Player") => {
-    if (!isConnected || !address) {
-      console.error('Wallet not connected')
-      return false
-    }
-
-    setIsLoading(true)
-    try {
-      // Create a message to sign
-      const message = `Submit score ${score} for Top Blast leaderboard`
-      console.log('Requesting signature for message:', message)
-      
-      // Store the score and character name for later use
-      setPendingScore({ score, characterName })
-      
-      // Request signature
-      signMessage({ message })
-      
-      return true
-    } catch (error: any) {
-      console.error('Error requesting signature:', error)
-      if (error.message) console.error('Error message:', error.message)
-      if (error.stack) console.error('Error stack:', error.stack)
-      return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -112,6 +89,6 @@ export function useLeaderboard() {
     leaderboard,
     isLoading,
     submitScore,
-    refreshLeaderboard: fetchLeaderboard
+    refreshLeaderboard: fetchLeaderboard,
   }
 } 
