@@ -6,6 +6,8 @@ import { Web3Provider } from "./web3Config";
 import { useLeaderboard } from "./hooks/useLeaderboard";
 import { useWallet } from "./hooks/useWallet";
 import Leaderboard from "./components/Leaderboard";
+import Modal from './components/Modal';
+import Snackbar from './components/Snackbar'
 
 // Dynamically import the wallet component with SSR disabled
 const WalletButton = dynamic(
@@ -27,9 +29,12 @@ declare global {
 function GameContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showScoreModal, setShowScoreModal] = useState(false);
   const { submitScore, refreshLeaderboard } = useLeaderboard();
-  const { isConnected, connectWallet } = useWallet();
+  const { isConnected, connectWallet, storePendingScore, submitPendingScore, pendingScore } = useWallet();
   const [isMetaMask, setIsMetaMask] = useState(false);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false)
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -54,28 +59,11 @@ function GameContent() {
     // Define the submitGameScore function
     const submitGameScoreFn = async (score: number, characterName: string = "Player") => {
       try {
-        // Check if wallet is connected
-        if (!isConnected) {
-          alert("Please connect your wallet to submit your score!");
-          await connectWallet();
-          return;
-        }
-        
-        const success = await submitScore(score, characterName);
-        if (success) {
-          console.log('Score submitted successfully');
-          // Refresh the leaderboard
-          await refreshLeaderboard();
-          // Send success message back to iframe
-          window.frames[0].postMessage({ type: 'SCORE_SUBMITTED' }, '*');
-        } else {
-          console.error('Failed to submit score');
-          // Send error message back to iframe
-          window.frames[0].postMessage({ type: 'SCORE_ERROR', error: 'Failed to submit score' }, '*');
-        }
+        // Store the score and show the confirmation modal
+        storePendingScore(score, characterName);
+        setShowScoreModal(true);
       } catch (error: any) {
-        console.error('Error submitting score:', error);
-        alert("Failed to submit score. Please make sure your wallet is connected and try again.");
+        console.error('Error handling score:', error);
         // Send error message back to iframe
         window.frames[0].postMessage({ type: 'SCORE_ERROR', error: error?.message || 'Unknown error' }, '*');
       }
@@ -97,7 +85,7 @@ function GameContent() {
       delete (window as any).connectWallet;
       delete (window as any).submitScore;
     };
-  }, [submitScore, isConnected, connectWallet, refreshLeaderboard]);
+  }, [submitScore, isConnected, connectWallet, refreshLeaderboard, storePendingScore]);
 
   // Handle iframe communication
   useEffect(() => {
@@ -113,6 +101,39 @@ function GameContent() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
+
+  const handleSubmitScore = async () => {
+    if (!isConnected) {
+      setShowWalletModal(true)
+      setShowScoreModal(false)
+      return
+    }
+
+    if (!pendingScore) {
+      console.error('No pending score to submit')
+      return
+    }
+
+    const success = await submitScore(pendingScore.score, pendingScore.characterName)
+    if (success) {
+      setShowSuccessSnackbar(true)
+    }
+    setShowScoreModal(false)
+    storePendingScore(0, '') // Reset with default values
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      await connectWallet();
+      setShowWalletModal(false);
+      // Show the score submission modal if there's a pending score
+      if (pendingScore) {
+        setShowScoreModal(true);
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
 
   const shareOnTwitter = () => {
     const url = encodeURIComponent("https://topblast.eldor.app");
@@ -449,6 +470,102 @@ function GameContent() {
           </p>
         </div>
       )}
+
+      {/* Wallet Connection Modal */}
+      <Modal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        title="Connect Wallet"
+      >
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px' }}>
+            Connect your wallet to submit your score to the leaderboard and compete with other players!
+          </p>
+          <button
+            onClick={handleConnectWallet}
+            style={{
+              padding: '12px 24px',
+              fontSize: '1rem',
+              backgroundColor: '#19937f',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              boxShadow: '0px 0px 10px rgba(25, 147, 127, 0.5)',
+            }}
+          >
+            Connect Wallet
+          </button>
+          <p
+            style={{
+              marginTop: '15px',
+              fontSize: '0.9rem',
+              color: '#666',
+            }}
+          >
+            You can still play without connecting your wallet
+          </p>
+        </div>
+      </Modal>
+
+      {/* Score Submission Modal */}
+      <Modal
+        isOpen={showScoreModal}
+        onClose={() => setShowScoreModal(false)}
+        title="Submit Your Score"
+      >
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.2rem' }}>
+            Your Score: <strong>{pendingScore?.score}</strong>
+          </p>
+          <p style={{ marginBottom: '20px', fontSize: '1.2rem' }}>
+            Character: <strong>{pendingScore?.characterName}</strong>
+          </p>
+          <p style={{ marginBottom: '20px', color: '#666' }}>
+            Would you like to submit this score to the leaderboard?
+          </p>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button
+              onClick={handleSubmitScore}
+              style={{
+                padding: '12px 24px',
+                fontSize: '1rem',
+                backgroundColor: '#19937f',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                boxShadow: '0px 0px 10px rgba(25, 147, 127, 0.5)',
+              }}
+            >
+              Submit Score
+            </button>
+            <button
+              onClick={() => setShowScoreModal(false)}
+              style={{
+                padding: '12px 24px',
+                fontSize: '1rem',
+                backgroundColor: '#666',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Snackbar
+        message="Score successfully submitted"
+        isVisible={showSuccessSnackbar}
+        onClose={() => setShowSuccessSnackbar(false)}
+      />
 
     </div>
   );
