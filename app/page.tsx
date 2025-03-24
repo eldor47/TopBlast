@@ -216,9 +216,9 @@ function GameContent() {
             alignItems: "center",
           }}
         >
-          {/* Wallet Connection Button - Only show on desktop or if MetaMask is available */}
-          {(!isMobile || isMetaMask) && (
-            <div style={{ order: isMobile ? -1 : 0 }}>
+          {/* Wallet Connection Button - Only show on desktop */}
+          {!isMobile && (
+            <div>
               <WalletButton />
             </div>
           )}

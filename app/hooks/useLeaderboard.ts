@@ -112,7 +112,16 @@ export function useLeaderboard() {
         throw new Error(errorData.error || 'Failed to submit score')
       }
 
+      // Refresh the leaderboard after successful submission
       await refreshLeaderboard()
+      
+      // If connected with X, refresh again after a short delay to ensure the score is updated
+      if (isXConnected) {
+        setTimeout(async () => {
+          await refreshLeaderboard()
+        }, 1000)
+      }
+
       return true
     } catch (error: any) {
       console.error('Error submitting score:', error)
