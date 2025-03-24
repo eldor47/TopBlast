@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
+import { useLeaderboard } from '../hooks/useLeaderboard'
 
 interface LeaderboardEntry {
   id: number
-  address: string
-  characterName: string
   score: number
+  characterName: string
+  walletAddress?: string
+  xUsername?: string
   timestamp: string
 }
 
@@ -22,48 +24,10 @@ const formatScore = (score: number): string => {
 }
 
 export default function Leaderboard() {
-  const [scores, setScores] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
+  const { scores, isLoading, error } = useLeaderboard()
   const { address } = useAccount()
 
-  const fetchScores = async () => {
-    try {
-      const response = await fetch('/api/submit-score')
-      const data = await response.json()
-      setScores(data)
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    // Initial fetch
-    fetchScores()
-
-    // Set up polling every 5 seconds
-    const interval = setInterval(fetchScores, 5000)
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval)
-  }, [])
-
-  // Listen for score submission events
-  useEffect(() => {
-    const handleScoreSubmitted = () => {
-      fetchScores()
-    }
-
-    window.addEventListener('scoreSubmitted', handleScoreSubmitted)
-    return () => window.removeEventListener('scoreSubmitted', handleScoreSubmitted)
-  }, [])
-
-  const handleClick = (address: string) => {
-    window.open(`https://snowscan.xyz/address/${address}`, '_blank')
-  }
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div style={{
         width: "100%",
@@ -78,6 +42,25 @@ export default function Leaderboard() {
         backdropFilter: "blur(8px)"
       }}>
         Loading scores...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        width: "100%",
+        padding: "15px",
+        textAlign: "center",
+        fontSize: "1.2rem",
+        fontWeight: "bold",
+        color: "#ff4444",
+        backgroundColor: "rgba(255, 255, 255, 0.05)",
+        borderRadius: "12px",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
+        backdropFilter: "blur(8px)"
+      }}>
+        Error: {error}
       </div>
     )
   }
@@ -100,14 +83,13 @@ export default function Leaderboard() {
         </div>
       ) : (
         scores.map((entry: LeaderboardEntry, index: number) => {
-          const isUserScore = entry.address.toLowerCase() === address?.toLowerCase()
+          const isUserScore = entry.walletAddress?.toLowerCase() === address?.toLowerCase()
           const isTop3 = index < 3
           const isHighlighted = isUserScore && isTop3
 
           return (
             <div
               key={entry.id}
-              onClick={() => handleClick(entry.address)}
               style={{
                 position: "relative",
                 overflow: "hidden",
@@ -158,7 +140,27 @@ export default function Leaderboard() {
                     fontWeight: isUserScore ? "bold" : "normal",
                     color: isUserScore ? "#19937f" : "#fff"
                   }}>
-                    {entry.characterName || `${entry.address.slice(0, 6)}...${entry.address.slice(-4)}`}
+                    {entry.xUsername ? (
+                      <a
+                        href={`https://x.com/${entry.xUsername}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1DA1F2', textDecoration: 'none' }}
+                      >
+                        @{entry.xUsername}
+                      </a>
+                    ) : entry.walletAddress ? (
+                      <a
+                        href={`https://snowtrace.io/address/${entry.walletAddress}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#19937f', textDecoration: 'none' }}
+                      >
+                        {entry.walletAddress.slice(0, 6)}...{entry.walletAddress.slice(-4)}
+                      </a>
+                    ) : (
+                      entry.characterName
+                    )}
                   </span>
                 </div>
                 <span style={{ 

@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import { Web3Provider } from "./web3Config";
 import { useLeaderboard } from "./hooks/useLeaderboard";
 import { useWallet } from "./hooks/useWallet";
+import { usePendingScore } from "./hooks/usePendingScore";
 import Leaderboard from "./components/Leaderboard";
 import Modal from './components/Modal';
 import Snackbar from './components/Snackbar'
+import { useXAuth } from './hooks/useXAuth'
+import ConnectOptions from './components/ConnectOptions';
 
 // Dynamically import the wallet component with SSR disabled
 const WalletButton = dynamic(
@@ -32,7 +35,9 @@ function GameContent() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const { submitScore, refreshLeaderboard } = useLeaderboard();
-  const { isConnected, connectWallet, storePendingScore, submitPendingScore, pendingScore } = useWallet();
+  const { isConnected, connectWallet } = useWallet();
+  const { isConnected: isXConnected, connect: connectX } = useXAuth();
+  const { pendingScore, storePendingScore, submitPendingScore } = usePendingScore();
   const [isMetaMask, setIsMetaMask] = useState(false);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false)
 
@@ -103,7 +108,8 @@ function GameContent() {
   }, []);
 
   const handleSubmitScore = async () => {
-    if (!isConnected) {
+    // If neither wallet nor X is connected, show wallet modal
+    if (!isConnected && !isXConnected) {
       setShowWalletModal(true)
       setShowScoreModal(false)
       return
@@ -522,42 +528,64 @@ function GameContent() {
           <p style={{ marginBottom: '20px', fontSize: '1.2rem' }}>
             Character: <strong>{pendingScore?.characterName}</strong>
           </p>
-          <p style={{ marginBottom: '20px', color: '#666' }}>
-            Would you like to submit this score to the leaderboard?
-          </p>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-            <button
-              onClick={handleSubmitScore}
-              style={{
-                padding: '12px 24px',
-                fontSize: '1rem',
-                backgroundColor: '#19937f',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                boxShadow: '0px 0px 10px rgba(25, 147, 127, 0.5)',
-              }}
-            >
-              Submit Score
-            </button>
-            <button
-              onClick={() => setShowScoreModal(false)}
-              style={{
-                padding: '12px 24px',
-                fontSize: '1rem',
-                backgroundColor: '#666',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-              }}
-            >
-              Cancel
-            </button>
-          </div>
+          {!isConnected && !isXConnected ? (
+            <>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Connect to submit your score to the leaderboard:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+                <ConnectOptions onScoreSubmit={handleSubmitScore} />
+              </div>
+              <p
+                style={{
+                  marginTop: '15px',
+                  fontSize: '0.9rem',
+                  color: '#666',
+                }}
+              >
+                You can still play without connecting
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Would you like to submit this score to the leaderboard?
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button
+                  onClick={handleSubmitScore}
+                  style={{
+                    padding: '12px 24px',
+                    fontSize: '1rem',
+                    backgroundColor: '#19937f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    boxShadow: '0px 0px 10px rgba(25, 147, 127, 0.5)',
+                  }}
+                >
+                  Submit Score
+                </button>
+                <button
+                  onClick={() => setShowScoreModal(false)}
+                  style={{
+                    padding: '12px 24px',
+                    fontSize: '1rem',
+                    backgroundColor: '#666',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
 
