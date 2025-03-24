@@ -19,7 +19,7 @@ export async function createLeaderboardTable() {
         id SERIAL PRIMARY KEY,
         address VARCHAR(42) NULL,
         character_name VARCHAR(50) NOT NULL,
-        score INTEGER NOT NULL,
+        score BIGINT NOT NULL,
         x_username VARCHAR(50) NULL,
         timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )`;
@@ -57,6 +57,22 @@ export async function createLeaderboardTable() {
           AND column_name = 'address'
         ) THEN
           ALTER TABLE leaderboard ALTER COLUMN address DROP NOT NULL;
+        END IF;
+      END $$;
+    `;
+
+    // Modify score column to BIGINT if it's not already
+    await sql`
+      DO $$ 
+      BEGIN 
+        IF EXISTS (
+          SELECT 1 
+          FROM information_schema.columns 
+          WHERE table_name = 'leaderboard' 
+          AND column_name = 'score'
+          AND data_type = 'integer'
+        ) THEN
+          ALTER TABLE leaderboard ALTER COLUMN score TYPE BIGINT;
         END IF;
       END $$;
     `;
